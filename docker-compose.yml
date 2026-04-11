@@ -1,0 +1,24 @@
+services:
+  # playit.gg service — uncomment and add your SECRET_KEY to enable
+  # playit:
+  #   image: ghcr.io/playit-cloud/playit-agent:0.17
+  #   container_name: terraria-playit-1
+  #   network_mode: host
+  #   environment:
+  #     - SECRET_KEY=your_playit_secret_key_here
+  #   restart: unless-stopped
+
+  panel:
+    build: ./panel
+    container_name: terraria-hub
+    restart: unless-stopped
+    ports:
+      - "${PANEL_PORT:-3001}:${PANEL_PORT:-3001}"
+    volumes:
+      - ./worlds:/worlds
+      - ./data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    security_opt:
+      - label=disable
+    env_file:
+      - ./.env

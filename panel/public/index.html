@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Terraria Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c0f; --surface: #111418; --card: #161b22; --border: #2a3441;
+    --accent: #4ade80; --accent2: #22d3ee; --warn: #fb923c; --danger: #f87171;
+    --text: #e2e8f0; --muted: #64748b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Rajdhani', sans-serif; font-size: 16px; min-height: 100vh; }
+  body::before { content: ''; position: fixed; inset: 0; background: radial-gradient(ellipse at 20% 0%, rgba(74,222,128,0.04) 0%, transparent 60%), radial-gradient(ellipse at 80% 100%, rgba(34,211,238,0.04) 0%, transparent 60%); pointer-events: none; z-index: 0; }
+
+  /* ── Auth screens ── */
+  .auth-wrap { position: relative; z-index: 1; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; }
+  .auth-box { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 2.5rem; width: 100%; max-width: 420px; }
+  .auth-logo { font-family: 'Share Tech Mono', monospace; color: var(--accent); font-size: 1rem; letter-spacing: 3px; text-align: center; margin-bottom: 0.25rem; }
+  .auth-sub { text-align: center; color: var(--muted); font-size: 0.8rem; font-family: 'Share Tech Mono', monospace; letter-spacing: 2px; margin-bottom: 2rem; }
+  .auth-tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 1.5rem; }
+  .auth-tab { flex: 1; text-align: center; padding: 0.6rem; font-weight: 600; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; font-size: 0.9rem; letter-spacing: 0.5px; }
+  .auth-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .auth-form { display: none; }
+  .auth-form.active { display: block; }
+  .form-group { margin-bottom: 1rem; }
+  .form-group label { display: block; font-size: 0.78rem; color: var(--muted); font-family: 'Share Tech Mono', monospace; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 5px; }
+  .form-group input { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 5px; color: var(--text); padding: 10px 14px; font-family: 'Rajdhani', sans-serif; font-size: 1rem; transition: border-color 0.15s; }
+  .form-group input:focus { outline: none; border-color: var(--accent2); }
+  .auth-msg { font-size: 0.82rem; font-family: 'Share Tech Mono', monospace; margin-top: 0.75rem; min-height: 18px; }
+  .auth-msg.success { color: var(--accent); }
+  .auth-msg.error { color: var(--danger); }
+  .auth-link { color: var(--accent2); cursor: pointer; font-size: 0.82rem; font-family: 'Share Tech Mono', monospace; text-decoration: underline; margin-top: 0.75rem; display: inline-block; }
+
+  /* ── Buttons ── */
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 5px; border: 1px solid; font-family: 'Rajdhani', sans-serif; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.15s; letter-spacing: 0.5px; white-space: nowrap; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-full { width: 100%; justify-content: center; }
+  .btn-primary { background: rgba(74,222,128,0.1); border-color: rgba(74,222,128,0.4); color: var(--accent); }
+  .btn-primary:hover:not(:disabled) { background: rgba(74,222,128,0.2); border-color: var(--accent); }
+  .btn-info { background: rgba(34,211,238,0.1); border-color: rgba(34,211,238,0.3); color: var(--accent2); }
+  .btn-info:hover:not(:disabled) { background: rgba(34,211,238,0.2); border-color: var(--accent2); }
+  .btn-warn { background: rgba(251,146,60,0.1); border-color: rgba(251,146,60,0.3); color: var(--warn); }
+  .btn-warn:hover:not(:disabled) { background: rgba(251,146,60,0.2); border-color: var(--warn); }
+  .btn-danger { background: rgba(248,113,113,0.1); border-color: rgba(248,113,113,0.3); color: var(--danger); }
+  .btn-danger:hover:not(:disabled) { background: rgba(248,113,113,0.2); border-color: var(--danger); }
+  .btn-ghost { background: transparent; border-color: var(--border); color: var(--muted); }
+  .btn-ghost:hover:not(:disabled) { border-color: var(--text); color: var(--text); }
+  .btn-sm { padding: 4px 10px; font-size: 0.78rem; }
+
+  /* ── App layout ── */
+  #app { display: none; position: relative; z-index: 1; }
+  header { position: sticky; top: 0; z-index: 100; background: rgba(10,12,15,0.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; height: 56px; }
+  .logo { font-family: 'Share Tech Mono', monospace; color: var(--accent); font-size: 1rem; letter-spacing: 2px; }
+  .logo span { color: var(--muted); }
+  .header-right { display: flex; align-items: center; gap: 1rem; }
+  .user-badge { font-family: 'Share Tech Mono', monospace; font-size: 0.75rem; color: var(--muted); }
+  .user-badge span { color: var(--accent2); }
+  .global-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); transition: background 0.3s; }
+  .global-dot.running { background: var(--accent); box-shadow: 0 0 8px var(--accent); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.5} }
+
+  /* ── Nav tabs ── */
+  .nav-tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--surface); padding: 0 2rem; }
+  .nav-tab { padding: 0.75rem 1.25rem; font-weight: 600; font-size: 0.9rem; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; }
+  .nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .nav-tab.admin-tab { color: var(--warn); }
+  .nav-tab.admin-tab.active { border-bottom-color: var(--warn); }
+  .page { display: none; max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
+  .page.active { display: block; }
+
+  /* ── Section titles ── */
+  .section-title { font-family: 'Share Tech Mono', monospace; font-size: 0.7rem; letter-spacing: 3px; color: var(--muted); text-transform: uppercase; margin-bottom: 1rem; display: flex; align-items: center; gap: 12px; }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* ── World cards ── */
+  .worlds-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+  .world-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; position: relative; overflow: hidden; transition: border-color 0.2s, transform 0.15s; cursor: pointer; }
+  .world-card:hover { border-color: var(--accent2); transform: translateY(-2px); }
+  .world-card.active { border-color: var(--accent); }
+  .world-card.active::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+  .world-card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 0.75rem; }
+  .world-name { font-size: 1.1rem; font-weight: 700; }
+  .world-badge { font-family: 'Share Tech Mono', monospace; font-size: 0.65rem; padding: 2px 8px; border-radius: 3px; letter-spacing: 1px; }
+  .badge-running { background: rgba(74,222,128,0.15); color: var(--accent); border: 1px solid rgba(74,222,128,0.3); }
+  .badge-stopped { background: rgba(71,85,105,0.2); color: var(--muted); border: 1px solid var(--border); }
+  .badge-new { background: rgba(34,211,238,0.1); color: var(--accent2); border: 1px solid rgba(34,211,238,0.2); }
+  .world-meta { display: flex; gap: 1rem; font-size: 0.8rem; color: var(--muted); margin-bottom: 1rem; font-family: 'Share Tech Mono', monospace; }
+  .world-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  .new-world-card { background: transparent; border: 1px dashed var(--border); border-radius: 8px; padding: 1.25rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; cursor: pointer; transition: all 0.2s; min-height: 140px; color: var(--muted); }
+  .new-world-card:hover { border-color: var(--accent2); color: var(--accent2); background: rgba(34,211,238,0.04); }
+  .new-world-card .plus { font-size: 2rem; line-height: 1; }
+  .new-world-card .label { font-size: 0.8rem; font-family: 'Share Tech Mono', monospace; letter-spacing: 1px; }
+
+  /* ── Detail panel ── */
+  #detail-panel { background: var(--card); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--surface); }
+  .tab { padding: 0.75rem 1.25rem; font-weight: 600; font-size: 0.9rem; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-content { display: none; padding: 1.5rem; }
+  .tab-content.active { display: block; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .form-grid .form-group { margin-bottom: 0; }
+  .form-group.full { grid-column: 1 / -1; }
+  .form-group label { font-size: 0.78rem; color: var(--muted); font-family: 'Share Tech Mono', monospace; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 5px; display: block; }
+  .form-group input, .form-group select { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 5px; color: var(--text); padding: 8px 12px; font-family: 'Rajdhani', sans-serif; font-size: 0.95rem; }
+  .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--accent2); }
+  select option { background: var(--surface); }
+
+  /* ── Logs ── */
+  .log-box { background: var(--bg); border: 1px solid var(--border); border-radius: 5px; padding: 1rem; font-family: 'Share Tech Mono', monospace; font-size: 0.72rem; line-height: 1.6; color: #94a3b8; height: 300px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
+
+  /* ── Mods table ── */
+  .mods-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  .mods-table th { text-align: left; padding: 8px 12px; font-family: 'Share Tech Mono', monospace; font-size: 0.7rem; letter-spacing: 1px; color: var(--muted); border-bottom: 1px solid var(--border); text-transform: uppercase; }
+  .mods-table td { padding: 8px 12px; border-bottom: 1px solid rgba(42,52,65,0.5); vertical-align: middle; }
+  .mods-table input, .mods-table select { padding: 4px 8px; font-size: 0.82rem; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; color: var(--text); font-family: 'Rajdhani', sans-serif; }
+
+  /* ── Admin table ── */
+  .admin-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  .admin-table th { text-align: left; padding: 10px 12px; font-family: 'Share Tech Mono', monospace; font-size: 0.7rem; letter-spacing: 1px; color: var(--muted); border-bottom: 1px solid var(--border); text-transform: uppercase; }
+  .admin-table td { padding: 10px 12px; border-bottom: 1px solid rgba(42,52,65,0.5); vertical-align: middle; }
+  .role-badge { font-family: 'Share Tech Mono', monospace; font-size: 0.65rem; padding: 2px 8px; border-radius: 3px; }
+  .role-admin { background: rgba(251,146,60,0.15); color: var(--warn); border: 1px solid rgba(251,146,60,0.3); }
+  .role-user { background: rgba(100,116,139,0.15); color: var(--muted); border: 1px solid var(--border); }
+  .verified-yes { color: var(--accent); font-family: 'Share Tech Mono', monospace; font-size: 0.75rem; }
+  .verified-no { color: var(--danger); font-family: 'Share Tech Mono', monospace; font-size: 0.75rem; }
+
+  /* ── Modal ── */
+  .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 200; display: none; align-items: center; justify-content: center; }
+  .modal-bg.open { display: flex; }
+  .modal { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 2rem; width: 100%; max-width: 480px; }
+  .modal h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: 1.5rem; color: var(--accent); font-family: 'Share Tech Mono', monospace; letter-spacing: 2px; }
+  .modal-actions { display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.5rem; }
+
+  /* ── Overlay ── */
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(6px); z-index: 300; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 1.5rem; }
+  .overlay.open { display: flex; }
+  .overlay-title { font-family: 'Share Tech Mono', monospace; color: var(--accent); font-size: 1rem; letter-spacing: 3px; }
+  .overlay-log { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; width: 640px; max-width: 90vw; height: 280px; overflow-y: auto; padding: 1rem; font-family: 'Share Tech Mono', monospace; font-size: 0.72rem; color: #94a3b8; white-space: pre-wrap; word-break: break-all; }
+  .progress-bar-wrap { width: 640px; max-width: 90vw; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .progress-bar { height: 100%; width: 30%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 2px; animation: slide 1.5s ease-in-out infinite; }
+  @keyframes slide { 0%{transform:translateX(-100%)}100%{transform:translateX(400%)} }
+
+  /* ── Toast ── */
+  #toast { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 400; display: flex; flex-direction: column; gap: 0.5rem; }
+  .toast-item { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 10px 16px; font-size: 0.82rem; min-width: 200px; animation: fadeIn 0.2s ease; font-family: 'Share Tech Mono', monospace; }
+  .toast-item.success { border-color: rgba(74,222,128,0.4); color: var(--accent); }
+  .toast-item.error { border-color: rgba(248,113,113,0.4); color: var(--danger); }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)} }
+
+  .empty-state { text-align: center; padding: 3rem; color: var(--muted); font-family: 'Share Tech Mono', monospace; font-size: 0.82rem; }
+  .no-selection { text-align: center; padding: 3rem; color: var(--muted); }
+  .no-selection p { font-family: 'Share Tech Mono', monospace; font-size: 0.82rem; margin-top: 0.5rem; }
+</style>
+</head>
+<body>
+
+<!-- ── Auth Screen ── -->
+<div id="auth-screen">
+  <div class="auth-wrap">
+    <div class="auth-box">
+      <div class="auth-logo">⚔ TERRARIA HUB</div>
+      <div class="auth-sub">SERVER MANAGEMENT</div>
+      <div class="auth-tabs">
+        <div class="auth-tab active" onclick="showAuthTab('login')">Login</div>
+        <div class="auth-tab" onclick="showAuthTab('register')">Register</div>
+      </div>
+
+      <!-- Login -->
+      <div id="form-login" class="auth-form active">
+        <div class="form-group"><label>Email</label><input type="email" id="login-email" placeholder="you@example.com"/></div>
+        <div class="form-group"><label>Password</label><input type="password" id="login-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"/></div>
+        <button class="btn btn-primary btn-full" style="margin-top:0.5rem" onclick="doLogin()">Login</button>
+        <div class="auth-msg" id="login-msg"></div>
+        <span class="auth-link" onclick="showAuthTab('forgot')">Forgot password?</span>
+      </div>
+
+      <!-- Register -->
+      <div id="form-register" class="auth-form">
+        <div class="form-group"><label>Username</label><input type="text" id="reg-username" placeholder="YourName"/></div>
+        <div class="form-group"><label>Email</label><input type="email" id="reg-email" placeholder="you@example.com"/></div>
+        <div class="form-group"><label>Password</label><input type="password" id="reg-password" placeholder="Min 8 characters"/></div>
+        <div class="form-group"><label>Confirm Password</label><input type="password" id="reg-confirm" placeholder="Repeat password" onkeydown="if(event.key==='Enter')doRegister()"/></div>
+        <button class="btn btn-primary btn-full" style="margin-top:0.5rem" onclick="doRegister()">Create Account</button>
+        <div class="auth-msg" id="reg-msg"></div>
+      </div>
+
+      <!-- Forgot -->
+      <div id="form-forgot" class="auth-form">
+        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem;">Enter your email and we'll send a reset link.</p>
+        <div class="form-group"><label>Email</label><input type="email" id="forgot-email" placeholder="you@example.com"/></div>
+        <button class="btn btn-primary btn-full" style="margin-top:0.5rem" onclick="doForgot()">Send Reset Link</button>
+        <div class="auth-msg" id="forgot-msg"></div>
+        <span class="auth-link" onclick="showAuthTab('login')">← Back to login</span>
+      </div>
+
+      <!-- Reset -->
+      <div id="form-reset" class="auth-form">
+        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem;">Enter your new password.</p>
+        <div class="form-group"><label>New Password</label><input type="password" id="reset-password" placeholder="Min 8 characters"/></div>
+        <div class="form-group"><label>Confirm Password</label><input type="password" id="reset-confirm" placeholder="Repeat password"/></div>
+        <button class="btn btn-primary btn-full" style="margin-top:0.5rem" onclick="doReset()">Reset Password</button>
+        <div class="auth-msg" id="reset-msg"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Main App ── -->
+<div id="app">
+  <header>
+    <div class="logo">TERRARIA <span>//</span> HUB</div>
+    <div class="header-right">
+      <div class="global-dot" id="global-dot"></div>
+      <div class="user-badge">Welcome, <span id="user-display"></span></div>
+      <button class="btn btn-ghost btn-sm" onclick="doLogout()">Logout</button>
+    </div>
+  </header>
+
+  <div class="nav-tabs">
+    <div class="nav-tab active" onclick="showPage('worlds')">My Worlds</div>
+    <div class="nav-tab admin-tab" id="admin-nav-tab" style="display:none" onclick="showPage('admin')">Admin</div>
+  </div>
+
+  <!-- Worlds Page -->
+  <div class="page active" id="page-worlds">
+    <div class="section-title">WORLDS</div>
+    <div class="worlds-grid" id="worlds-grid"></div>
+    <div class="section-title">MANAGE</div>
+    <div id="detail-panel">
+      <div class="no-selection"><div style="font-size:2rem">⚔️</div><p>SELECT A WORLD TO MANAGE</p></div>
+    </div>
+  </div>
+
+  <!-- Admin Page -->
+  <div class="page" id="page-admin">
+    <div class="section-title">USER MANAGEMENT</div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:2rem;">
+      <div style="overflow-x:auto;"><table class="admin-table" id="users-table"><thead><tr><th>Username</th><th>Email</th><th>Role</th><th>Verified</th><th>Joined</th><th>Actions</th></tr></thead><tbody id="users-tbody"></tbody></table></div>
+    </div>
+    <div class="section-title">ALL WORLDS</div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+      <div style="overflow-x:auto;"><table class="admin-table"><thead><tr><th>World</th><th>Owner</th><th>Email</th><th>Port</th><th>Status</th></tr></thead><tbody id="admin-worlds-tbody"></tbody></table></div>
+    </div>
+  </div>
+</div>
+
+<!-- New World Modal -->
+<div class="modal-bg" id="new-world-modal">
+  <div class="modal">
+    <h2>// NEW WORLD</h2>
+    <div style="display:flex;flex-direction:column;gap:1rem;">
+      <div class="form-group"><label>World Name</label><input type="text" id="nw-name" placeholder="MyWorld"/></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+        <div class="form-group"><label>Size</label><select id="nw-size"><option value="1">Small</option><option value="2">Medium</option><option value="3" selected>Large</option></select></div>
+        <div class="form-group"><label>Difficulty</label><select id="nw-difficulty"><option value="0" selected>Classic</option><option value="1">Expert</option><option value="2">Master</option><option value="3">Journey</option></select></div>
+        <div class="form-group"><label>Max Players</label><input type="number" id="nw-maxplayers" value="8" min="1" max="255"/></div>
+        <div class="form-group"><label>Seed (optional)</label><input type="text" id="nw-seed" placeholder="random"/></div>
+        <div class="form-group"><label>Password (optional)</label><input type="text" id="nw-password" placeholder="none"/></div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeNewWorldModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="createWorld()">Create World</button>
+    </div>
+  </div>
+</div>
+
+<!-- Start Overlay -->
+<div class="overlay" id="start-overlay">
+  <div class="overlay-title" id="overlay-title">STARTING SERVER...</div>
+  <div class="progress-bar-wrap"><div class="progress-bar"></div></div>
+  <div class="overlay-log" id="overlay-log"></div>
+  <button class="btn btn-ghost btn-sm" onclick="dismissOverlay()" id="overlay-dismiss" style="display:none">DISMISS</button>
+</div>
+
+<div id="toast"></div>
+
+<script>
+let TOKEN = localStorage.getItem('th_token');
+let USER = null;
+let selectedWorld = null;
+let _mods = [];
+let startedAt = null;
+let logPollTimer = null;
+
+const authHdr = () => ({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${TOKEN}` });
+
+async function api(method, path, body) {
+  const r = await fetch(path, { method, headers: authHdr(), body: body ? JSON.stringify(body) : undefined });
+  return r.json();
+}
+
+function toast(msg, type='success') {
+  const el = document.createElement('div');
+  el.className = `toast-item ${type}`;
+  el.textContent = msg;
+  document.getElementById('toast').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+// ── Auth ──────────────────────────────────────────────────────────────────
+function showAuthTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+  const tabEl = document.querySelector(`.auth-tab:nth-child(${tab==='login'?1:tab==='register'?2:1})`);
+  if (tabEl) tabEl.classList.add('active');
+  document.getElementById(`form-${tab}`).classList.add('active');
+}
+
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const msg = document.getElementById('login-msg');
+  msg.textContent = 'Logging in...'; msg.className = 'auth-msg';
+  const d = await fetch('/api/auth/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({email,password}) }).then(r=>r.json());
+  if (d.error) { msg.textContent = d.error; msg.className = 'auth-msg error'; return; }
+  TOKEN = d.token; USER = d.user;
+  localStorage.setItem('th_token', TOKEN);
+  initApp();
+}
+
+async function doRegister() {
+  const username = document.getElementById('reg-username').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const password = document.getElementById('reg-password').value;
+  const confirm = document.getElementById('reg-confirm').value;
+  const msg = document.getElementById('reg-msg');
+  if (password !== confirm) { msg.textContent = 'Passwords do not match'; msg.className = 'auth-msg error'; return; }
+  msg.textContent = 'Creating account...'; msg.className = 'auth-msg';
+  const d = await fetch('/api/auth/register', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({email,password,username}) }).then(r=>r.json());
+  if (d.error) { msg.textContent = d.error; msg.className = 'auth-msg error'; return; }
+  msg.textContent = '✓ ' + d.message; msg.className = 'auth-msg success';
+}
+
+async function doForgot() {
+  const email = document.getElementById('forgot-email').value.trim();
+  const msg = document.getElementById('forgot-msg');
+  msg.textContent = 'Sending...'; msg.className = 'auth-msg';
+  const d = await fetch('/api/auth/forgot', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({email}) }).then(r=>r.json());
+  msg.textContent = '✓ ' + (d.message || 'Reset link sent'); msg.className = 'auth-msg success';
+}
+
+async function doReset() {
+  const password = document.getElementById('reset-password').value;
+  const confirm = document.getElementById('reset-confirm').value;
+  const msg = document.getElementById('reset-msg');
+  if (password !== confirm) { msg.textContent = 'Passwords do not match'; msg.className = 'auth-msg error'; return; }
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('token') || params.get('reset');
+  const d = await fetch('/api/auth/reset', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({token,password}) }).then(r=>r.json());
+  if (d.error) { msg.textContent = d.error; msg.className = 'auth-msg error'; return; }
+  msg.textContent = '✓ Password reset! Redirecting...'; msg.className = 'auth-msg success';
+  setTimeout(() => { window.location.href = '/'; }, 2000);
+}
+
+async function doLogout() {
+  await api('POST', '/api/auth/logout');
+  localStorage.removeItem('th_token');
+  TOKEN = null; USER = null;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('auth-screen').style.display = 'block';
+}
+
+// ── App init ──────────────────────────────────────────────────────────────
+async function initApp() {
+  const me = await api('GET', '/api/auth/me');
+  if (me.error) { localStorage.removeItem('th_token'); return; }
+  USER = me;
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('user-display').textContent = me.username;
+  if (me.role === 'admin') {
+    document.getElementById('admin-nav-tab').style.display = 'block';
+  }
+  await loadWorlds();
+  pollGlobalStatus();
+  setInterval(pollGlobalStatus, 10000);
+  setInterval(loadWorlds, 15000);
+
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('verified')) toast('Email verified! Welcome to Terraria Hub.');
+}
+
+// ── Global status ─────────────────────────────────────────────────────────
+async function pollGlobalStatus() {
+  try {
+    const d = await api('GET', '/api/status');
+    document.getElementById('global-dot').classList.toggle('running', d.anyRunning === true);
+  } catch(e) {}
+}
+
+// ── Pages ─────────────────────────────────────────────────────────────────
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(`page-${page}`).classList.add('active');
+  event.target.classList.add('active');
+  if (page === 'admin') loadAdminData();
+}
+
+// ── Worlds ────────────────────────────────────────────────────────────────
+async function loadWorlds() {
+  const d = await api('GET', '/api/worlds');
+  const grid = document.getElementById('worlds-grid');
+  grid.innerHTML = '';
+  if (!d.worlds || d.worlds.length === 0) {
+    grid.innerHTML = '<div class="empty-state">NO WORLDS YET</div>';
+  }
+  for (const w of (d.worlds || [])) {
+    const isRunning = w.running;
+    const card = document.createElement('div');
+    card.className = `world-card${isRunning?' active':''}${selectedWorld===w.name?' active':''}`;
+    card.onclick = () => selectWorld(w.name);
+    const badge = isRunning ? '<span class="world-badge badge-running">● RUNNING</span>' : (w.hasWorld ? '<span class="world-badge badge-stopped">STOPPED</span>' : '<span class="world-badge badge-new">NEW</span>');
+    const diff = ['Classic','Expert','Master','Journey'][w.settings?.difficulty??0];
+    const size = ['','Small','Medium','Large'][w.settings?.worldSize??3];
+    const portLabel = w.port ? `🔌 :${w.port}` : '🔌 pending';
+    const playitLabel = w.settings?.playitSecret ? '🌐 tunnel' : '';
+    card.innerHTML = `
+      <div class="world-card-header"><div class="world-name">${w.name}</div>${badge}</div>
+      <div class="world-meta"><span>${size}</span><span>${diff}</span><span>${w.modCount} mods</span><span>👥 ${w.settings?.maxPlayers??8}</span><span>${portLabel}</span>${playitLabel?`<span>${playitLabel}</span>`:''}</div>
+      <div class="world-actions">
+        ${isRunning
+          ? `<button class="btn btn-warn btn-sm" onclick="event.stopPropagation();stopWorld('${w.name}')">⏹ Stop</button>
+             <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();restartWorld('${w.name}')">↺ Restart</button>`
+          : `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();launchWorld('${w.name}')">▶ Start</button>`}
+        <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();selectWorld('${w.name}')">⚙ Manage</button>
+      </div>`;
+    grid.appendChild(card);
+  }
+  const nc = document.createElement('div');
+  nc.className = 'new-world-card'; nc.onclick = openNewWorldModal;
+  nc.innerHTML = '<div class="plus">+</div><div class="label">NEW WORLD</div>';
+  grid.appendChild(nc);
+}
+
+async function selectWorld(name) {
+  selectedWorld = name;
+  await loadWorlds();
+  renderDetailPanel(name);
+}
+
+async function renderDetailPanel(name) {
+  const [settings, mods] = await Promise.all([
+    api('GET', `/api/worlds/${name}/settings`),
+    api('GET', `/api/worlds/${name}/mods`)
+  ]);
+  _mods = mods;
+  document.getElementById('detail-panel').innerHTML = `
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('settings')">Settings</div>
+      <div class="tab" onclick="switchTab('mods')">Mods</div>
+      <div class="tab" onclick="switchTab('logs')">Logs</div>
+      <div class="tab" onclick="switchTab('danger')">Danger</div>
+    </div>
+    <div id="tab-settings" class="tab-content active">${renderSettings(settings)}</div>
+    <div id="tab-mods" class="tab-content">${renderModsHTML(mods)}</div>
+    <div id="tab-logs" class="tab-content">${renderLogsHTML()}</div>
+    <div id="tab-danger" class="tab-content">${renderDangerHTML(name)}</div>`;
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tabs .tab').forEach((t,i)=>t.classList.toggle('active',['settings','mods','logs','danger'][i]===tab));
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  document.getElementById(`tab-${tab}`).classList.add('active');
+  if (tab==='logs') startLogPoll(); else stopLogPoll();
+}
+
+function renderSettings(s) {
+  return `<div class="form-grid">
+    <div class="form-group"><label>Max Players</label><input type="number" id="s-maxplayers" value="${s.maxPlayers??8}" min="1" max="255"/></div>
+    <div class="form-group"><label>Password</label><input type="text" id="s-password" value="${s.password??''}"/></div>
+    <div class="form-group"><label>World Size</label><select id="s-worldsize"><option value="1" ${s.worldSize==1?'selected':''}>Small</option><option value="2" ${s.worldSize==2?'selected':''}>Medium</option><option value="3" ${s.worldSize==3?'selected':''}>Large</option></select></div>
+    <div class="form-group"><label>Difficulty</label><select id="s-difficulty"><option value="0" ${s.difficulty==0?'selected':''}>Classic</option><option value="1" ${s.difficulty==1?'selected':''}>Expert</option><option value="2" ${s.difficulty==2?'selected':''}>Master</option><option value="3" ${s.difficulty==3?'selected':''}>Journey</option></select></div>
+    <div class="form-group"><label>Seed</label><input type="text" id="s-seed" value="${s.seed??''}"/></div>
+    <div class="form-group"><label>Autosave (min)</label><input type="number" id="s-autosave" value="${s.autosave??10}" min="1"/></div>
+    <div class="form-group"><label>Game Port <span style="color:var(--muted);font-size:0.75rem;">(auto-assigned)</span></label><input type="text" value="${s.gamePort??'assigned on start'}" disabled style="opacity:0.6;cursor:not-allowed;"/></div>
+    <div class="form-group"><label>playit.gg Secret Key <span style="color:var(--muted);font-size:0.75rem;">(optional)</span></label><input type="text" id="s-playit" value="${s.playitSecret??''}" placeholder="Leave blank to skip tunnel for this world"/></div>
+    <div class="form-group full"><label>Shutdown Message</label><input type="text" id="s-shutdown" value="${s.shutdownMessage??'Server shutting down!'}"/></div>
+  </div>
+  <div style="margin-top:1.25rem;display:flex;gap:0.75rem;">
+    <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+    <button class="btn btn-info" onclick="saveAndRestart()">Save & Restart</button>
+  </div>`;
+}
+
+async function saveSettings(restart=false) {
+  const settings = {
+    maxPlayers: +document.getElementById('s-maxplayers').value,
+    password: document.getElementById('s-password').value,
+    worldSize: +document.getElementById('s-worldsize').value,
+    difficulty: +document.getElementById('s-difficulty').value,
+    seed: document.getElementById('s-seed').value,
+    autosave: +document.getElementById('s-autosave').value,
+    shutdownMessage: document.getElementById('s-shutdown').value,
+    playitSecret: document.getElementById('s-playit').value
+  };
+  await api('POST', `/api/worlds/${selectedWorld}/settings`, settings);
+  toast('Settings saved');
+  if (restart) launchWorld(selectedWorld);
+}
+function saveAndRestart() { saveSettings(true); }
+
+function renderModsHTML(mods) {
+  const rows = mods.map((m,i) => `<tr>
+    <td><input style="width:140px" value="${m.name}" onchange="_mods[${i}].name=this.value"/></td>
+    <td><input style="width:120px" value="${m.workshopId||''}" onchange="_mods[${i}].workshopId=this.value"/></td>
+    <td><select onchange="_mods[${i}].side=this.value"><option value="server" ${m.side==='server'?'selected':''}>Server</option><option value="client" ${m.side==='client'?'selected':''}>Client</option><option value="both" ${m.side==='both'?'selected':''}>Both</option></select></td>
+    <td><button class="btn btn-danger btn-sm" onclick="removeMod(${i})">✕</button></td>
+  </tr>`).join('');
+  return `
+    <div style="margin-bottom:1rem;">
+      <label style="font-size:0.78rem;color:var(--muted);font-family:'Share Tech Mono',monospace;letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:6px;">Import from Steam Workshop URL</label>
+      <div style="display:flex;gap:0.5rem;">
+        <input type="text" id="url-import" placeholder="https://steamcommunity.com/sharedfiles/filedetails/?id=..." style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:8px 12px;font-family:'Rajdhani',sans-serif;font-size:0.9rem;"/>
+        <button class="btn btn-info btn-sm" onclick="importFromUrl()">⬇ Import</button>
+      </div>
+      <div id="url-status" style="font-size:0.75rem;font-family:'Share Tech Mono',monospace;margin-top:4px;min-height:16px;"></div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="mods-table"><thead><tr><th>Name</th><th>Workshop ID</th><th>Side</th><th></th></tr></thead>
+      <tbody id="mods-tbody">${rows}</tbody></table>
+    </div>
+    <div style="margin-top:1rem;display:flex;gap:0.75rem;flex-wrap:wrap;">
+      <button class="btn btn-ghost btn-sm" onclick="addModRow()">+ Add Row</button>
+      <button class="btn btn-primary" onclick="saveMods()">Save Mods</button>
+    </div>`;
+}
+
+function addModRow() {
+  _mods.push({name:'',workshopId:'',side:'both'});
+  const i = _mods.length-1;
+  document.getElementById('mods-tbody').insertAdjacentHTML('beforeend',`<tr>
+    <td><input style="width:140px" value="" onchange="_mods[${i}].name=this.value"/></td>
+    <td><input style="width:120px" value="" onchange="_mods[${i}].workshopId=this.value"/></td>
+    <td><select onchange="_mods[${i}].side=this.value"><option value="server">Server</option><option value="client">Client</option><option value="both" selected>Both</option></select></td>
+    <td><button class="btn btn-danger btn-sm" onclick="removeMod(${i})">✕</button></td>
+  </tr>`);
+}
+
+function removeMod(i) { _mods.splice(i,1); renderDetailPanel(selectedWorld); }
+
+async function saveMods() {
+  await api('POST', `/api/worlds/${selectedWorld}/mods`, _mods);
+  toast('Mods saved');
+}
+
+async function importFromUrl() {
+  const input = document.getElementById('url-import');
+  const status = document.getElementById('url-status');
+  const match = input.value.trim().match(/[?&]id=(\d+)/);
+  if (!match) { status.style.color='var(--danger)'; status.textContent='Invalid URL'; return; }
+  const workshopId = match[1];
+  if (_mods.find(m => m.workshopId===workshopId)) { status.style.color='var(--warn)'; status.textContent='Already in list'; return; }
+  status.style.color='var(--muted)'; status.textContent='Fetching from Steam...';
+  let name = workshopId;
+  try {
+    const r = await fetch('/api/steam/mod/'+workshopId, {headers: authHdr()});
+    const d = await r.json();
+    if (d.name) name = d.name.replace(/\s+/g,'');
+  } catch(e) {}
+  _mods.push({name,workshopId,side:'both'});
+  const i = _mods.length-1;
+  status.style.color='var(--accent)'; status.textContent=`Added: ${name} (${workshopId})`;
+  input.value='';
+  document.getElementById('mods-tbody').insertAdjacentHTML('beforeend',`<tr>
+    <td><input style="width:140px" value="${name}" onchange="_mods[${i}].name=this.value"/></td>
+    <td><input style="width:120px" value="${workshopId}" onchange="_mods[${i}].workshopId=this.value"/></td>
+    <td><select onchange="_mods[${i}].side=this.value"><option value="server">Server</option><option value="client">Client</option><option value="both" selected>Both</option></select></td>
+    <td><button class="btn btn-danger btn-sm" onclick="removeMod(${i})">✕</button></td>
+  </tr>`);
+}
+
+function renderLogsHTML() {
+  return `<div style="display:flex;gap:0.5rem;margin-bottom:0.75rem;">
+    <button class="btn btn-ghost btn-sm" onclick="fetchLogs()">↻ Refresh</button>
+    <button class="btn btn-ghost btn-sm" onclick="document.getElementById('log-box').textContent=''">Clear</button>
+  </div>
+  <div class="log-box" id="log-box">Loading logs...</div>`;
+}
+
+async function fetchLogs() {
+  if (!selectedWorld) return;
+  try {
+    const d = await api('GET', `/api/worlds/${selectedWorld}/logs?lines=80`);
+    const box = document.getElementById('log-box');
+    if (box) { box.textContent = d.logs||'(no logs)'; box.scrollTop=box.scrollHeight; }
+  } catch(e) {}
+}
+function startLogPoll() { fetchLogs(); stopLogPoll(); logPollTimer=setInterval(fetchLogs,4000); }
+function stopLogPoll() { if(logPollTimer){clearInterval(logPollTimer);logPollTimer=null;} }
+
+function renderDangerHTML(name) {
+  return `<div style="max-width:480px;">
+    <p style="color:var(--muted);font-size:0.85rem;font-family:'Share Tech Mono',monospace;margin-bottom:1rem;">Permanently delete this world and all its files. Cannot be undone.</p>
+    <button class="btn btn-danger" onclick="deleteWorld('${name}')">🗑 Delete "${name}"</button>
+  </div>`;
+}
+
+async function deleteWorld(name) {
+  if (!confirm(`Delete "${name}" permanently?`)) return;
+  const d = await api('DELETE', `/api/worlds/${name}`);
+  if (d.success) { selectedWorld=null; toast(`Deleted ${name}`); loadWorlds(); document.getElementById('detail-panel').innerHTML='<div class="no-selection"><div style="font-size:2rem">⚔️</div><p style="font-family:\'Share Tech Mono\',monospace;font-size:0.82rem;margin-top:0.5rem;">SELECT A WORLD TO MANAGE</p></div>'; }
+  else toast(d.error,'error');
+}
+
+// ── World controls ─────────────────────────────────────────────────────────
+async function launchWorld(name) {
+  startedAt = new Date().toISOString();
+  showOverlay(`STARTING: ${name}`);
+  const d = await api('POST', `/api/worlds/${name}/start`);
+  if (d.error) { toast(d.error,'error'); hideOverlay(); return; }
+  pollOverlayLogs(name);
+}
+
+async function stopWorld(name) {
+  const d = await api('POST', `/api/worlds/${name}/stop`);
+  if (d.success) { toast(`Stopped ${name}`); loadWorlds(); pollGlobalStatus(); }
+  else toast(d.error,'error');
+}
+
+async function restartWorld(name) {
+  startedAt = new Date().toISOString();
+  showOverlay(`RESTARTING: ${name}`);
+  const d = await api('POST', `/api/worlds/${name}/restart`);
+  if (d.error) { toast(d.error,'error'); hideOverlay(); return; }
+  pollOverlayLogs(name);
+}
+
+function showOverlay(title) {
+  document.getElementById('overlay-title').textContent=title;
+  document.getElementById('overlay-log').textContent='';
+  document.getElementById('overlay-dismiss').style.display='none';
+  document.getElementById('start-overlay').classList.add('open');
+}
+function hideOverlay() { document.getElementById('start-overlay').classList.remove('open'); }
+function dismissOverlay() { hideOverlay(); }
+
+async function pollOverlayLogs(name) {
+  const logEl = document.getElementById('overlay-log');
+  const check = async () => {
+    try {
+      const d = await api('GET', `/api/worlds/${name}/logs?lines=60&since=${encodeURIComponent(startedAt)}`);
+      if (logEl) { logEl.textContent=d.logs||''; logEl.scrollTop=logEl.scrollHeight; }
+      if (d.ready) {
+        document.getElementById('overlay-title').textContent='✓ SERVER READY';
+        document.getElementById('overlay-dismiss').style.display='inline-flex';
+        loadWorlds(); pollGlobalStatus(); return;
+      }
+    } catch(e) {}
+    setTimeout(check, 3000);
+  };
+  setTimeout(check, 3000);
+}
+
+// ── New World Modal ────────────────────────────────────────────────────────
+function openNewWorldModal() { document.getElementById('new-world-modal').classList.add('open'); }
+function closeNewWorldModal() { document.getElementById('new-world-modal').classList.remove('open'); }
+
+async function createWorld() {
+  const name = document.getElementById('nw-name').value.trim();
+  if (!name) { toast('Enter a world name','error'); return; }
+  const settings = {
+    maxPlayers: +document.getElementById('nw-maxplayers').value,
+    password: document.getElementById('nw-password').value,
+    worldSize: +document.getElementById('nw-size').value,
+    difficulty: +document.getElementById('nw-difficulty').value,
+    seed: document.getElementById('nw-seed').value,
+    autosave: 10, shutdownMessage: 'Server shutting down!'
+  };
+  const d = await api('POST', '/api/worlds', { name, settings });
+  if (d.error) { toast(d.error,'error'); return; }
+  closeNewWorldModal();
+  toast(`Created: ${name}`);
+  loadWorlds();
+  selectWorld(name);
+}
+
+// ── Admin ──────────────────────────────────────────────────────────────────
+async function loadAdminData() {
+  const [users, worlds] = await Promise.all([
+    api('GET', '/api/admin/users'),
+    api('GET', '/api/admin/worlds')
+  ]);
+  const tbody = document.getElementById('users-tbody');
+  tbody.innerHTML = (users||[]).map(u => `<tr>
+    <td>${u.username}</td>
+    <td style="font-family:'Share Tech Mono',monospace;font-size:0.8rem;">${u.email}</td>
+    <td><span class="role-badge role-${u.role}">${u.role.toUpperCase()}</span></td>
+    <td>${u.verified ? '<span class="verified-yes">✓ YES</span>' : '<span class="verified-no">✗ NO</span>'}</td>
+    <td style="font-family:'Share Tech Mono',monospace;font-size:0.75rem;color:var(--muted);">${new Date(u.created_at*1000).toLocaleDateString()}</td>
+    <td>
+      <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+        ${!u.verified ? `<button class="btn btn-ghost btn-sm" onclick="verifyUser('${u.id}')">Verify</button>` : ''}
+        <button class="btn btn-ghost btn-sm" onclick="toggleRole('${u.id}','${u.role}')">${u.role==='admin'?'→ User':'→ Admin'}</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteUser('${u.id}')">Delete</button>
+      </div>
+    </td>
+  </tr>`).join('');
+
+  const wbody = document.getElementById('admin-worlds-tbody');
+  wbody.innerHTML = (worlds||[]).map(w => `<tr>
+    <td>${w.name}</td>
+    <td>${w.owner}</td>
+    <td style="font-family:monospace;font-size:0.8rem;">${w.email}</td>
+    <td style="font-family:monospace;font-size:0.8rem;">${w.port ? ':'+w.port : '—'}</td>
+    <td>${w.running
+      ? `<span class="badge-running">● RUNNING</span>`
+      : `<span class="badge-stopped">STOPPED</span>`}</td>
+  </tr>`).join('');
+}
+
+async function toggleRole(id, currentRole) {
+  const newRole = currentRole==='admin' ? 'user' : 'admin';
+  await api('POST', `/api/admin/users/${id}/role`, { role: newRole });
+  toast('Role updated'); loadAdminData();
+}
+
+async function verifyUser(id) {
+  await api('POST', `/api/admin/users/${id}/verify`);
+  toast('User verified'); loadAdminData();
+}
+
+async function deleteUser(id) {
+  if (!confirm('Delete this user and all their data?')) return;
+  await api('DELETE', `/api/admin/users/${id}`);
+  toast('User deleted'); loadAdminData();
+}
+
+// ── Boot ───────────────────────────────────────────────────────────────────
+const params = new URLSearchParams(window.location.search);
+if (window.location.pathname === '/reset' || params.get('reset') || params.get('token') && window.location.pathname === '/reset') {
+  document.getElementById('auth-screen').style.display='block';
+  showAuthTab('reset');
+} else if (TOKEN) {
+  initApp().catch(() => { localStorage.removeItem('th_token'); });
+}
+</script>
+</body>
+</html>
