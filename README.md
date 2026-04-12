@@ -226,6 +226,67 @@ docker exec -it terraria-hub sh
 
 ---
 
+## playit.gg — Public Tunnels Without Port Forwarding
+
+[playit.gg](https://playit.gg) is a free tunnelling service that gives your Terraria server a public address without touching your router, opening firewall ports, or having a static IP. Terraria Hub supports playit.gg at two levels — a global tunnel for the whole installation, and optional per-world tunnels so each user can have their own independent public address.
+
+### How it works
+
+When a world container starts, Terraria Hub can launch a companion playit.gg agent container alongside it. The agent connects outbound to playit.gg's network and receives a stable public hostname and port. Anyone on the internet can connect to that address and reach the Terraria server — no inbound firewall rules, no NAT, no port-forwarding required.
+
+```
+Player → playit.gg network → your playit agent → Terraria container
+                                                        ↑
+                                               Terraria Hub manages this
+```
+
+### Setting up playit.gg
+
+1. Create a free account at [playit.gg](https://playit.gg)
+2. Go to **Agents → Add Agent** and choose **Docker** as the agent type
+3. Copy the **Secret Key** shown during setup
+4. In playit.gg's dashboard, add a **TCP tunnel** pointing to port **7777**
+5. Note the public address assigned (e.g. `sg1.playit.gg:30001`)
+
+You can enter the secret key during the Terraria Hub installer to set up a global tunnel, or enter it per-world in the world's **Settings tab** inside the panel.
+
+### Global tunnel (installer)
+
+The installer asks for a playit.gg secret key during setup. If provided, it adds a persistent `playit` service to `docker-compose.yml` that starts automatically with the panel and stays running. This is useful when you want a single always-on tunnel for your primary world.
+
+### Per-world tunnels (recommended for multi-user)
+
+Each world has a **playit.gg Secret Key** field in its Settings tab. When a secret key is saved and the world is started, Terraria Hub launches a dedicated playit agent container just for that world. Each user can have their own tunnel with their own public address — completely independent of every other world on the server.
+
+This means:
+- User A's world gets one public address
+- User B's world gets a different public address
+- Neither user needs to know anything about the host server's network
+
+### Content creator use case
+
+playit.gg integration makes Terraria Hub ideal for **streamers and content creators** who want to play Terraria with their viewers or community.
+
+**The problem it solves:** Normally to host a Terraria server that viewers can join, you need to open ports on your home router, expose your real IP address, or pay for a VPS. None of those are ideal — port forwarding is complex, sharing your home IP is a security risk, and a VPS adds ongoing cost.
+
+**With Terraria Hub + playit.gg:**
+- Spin up a world on any Linux machine you already have (a home server, a spare PC, a VM)
+- Enter your playit.gg key in the world settings
+- Start the world — playit.gg gives you a clean public address like `na1.playit.gg:40123`
+- Share that address in your stream chat
+- Viewers connect directly without you ever exposing your IP or touching your router
+- When the stream ends, stop the world — the tunnel goes down automatically
+- Your world data is saved and ready for next stream
+
+**For communities and friend groups:**
+Each friend or community member can have their own Terraria Hub account, create their own world, and set up their own playit.gg tunnel. Everyone gets an independent server with their own public address, all managed from one panel, all on the same host machine.
+
+### playit.gg free tier limits
+
+The free tier supports one active tunnel per account with a shared IP. For most streaming and friend-group use cases this is sufficient. playit.gg's paid plans add dedicated IPs and multiple simultaneous tunnels if needed.
+
+---
+
 ## Security Notes
 
 ### Docker socket access
