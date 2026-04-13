@@ -22,6 +22,11 @@ A self-hosted, multi-user tModLoader server management panel. Each user gets the
 
 ---
 
+## Support
+If you enjoy my work, feel free to buy me a coffee!
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/U7U31XQGE8)
+
 ## Screenshots
 
 ### Authentication
