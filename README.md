@@ -54,7 +54,7 @@ After logging in, each user sees only their own worlds. The global dot in the to
 
 ### World Settings
 
-Each world has fully configurable settings. The game port is auto-assigned from the configured range and shown read-only. An optional per-world playit.gg secret key launches a dedicated public tunnel for that world without affecting others.
+Each world has fully configurable settings. The game port is auto-assigned from the configured range and shown read only. An optional per-world playit.gg secret key launches a dedicated public tunnel for that world without affecting others.
 
 ![Settings tab — max players, password, world size, difficulty, seed, autosave, playit.gg key](docs/screenshots/world-settings.png)
 
@@ -97,7 +97,7 @@ Connect from the tModLoader client using the server IP and the port shown on the
 
 ### Docker Architecture
 
-Three containers running simultaneously — the panel container managing everything, and one dedicated container per active world, each with its own isolated port mapping.
+Three containers running simultaneously the panel container managing everything, and one dedicated container per active world, each with its own isolated port mapping.
 
 ![docker ps showing terraria-hub panel and two world containers with port mappings](docs/screenshots/docker-ps.png)
 
@@ -130,9 +130,9 @@ The installer will prompt you for:
 | Host IP | Included in email links |
 | Admin email | Used to create the bootstrap admin account |
 | SMTP credentials | Host, port, username, password, from address |
-| playit.gg secret key | Optional — skipped if left blank |
+| playit.gg secret key | Optional skipped if left blank |
 
-At the end the installer prints a one time admin password. **Save it before closing the terminal** — it is not shown again.
+At the end the installer prints a one time admin password. **Save it before closing the terminal** it is not shown again.
 
 ---
 
@@ -161,13 +161,13 @@ All configuration is through the `.env` file. See [`.env.example`](.env.example)
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `JWT_SECRET` | **Yes** | — | Random hex string for signing JWTs. **Must be set — server refuses to start without it.** |
+| `JWT_SECRET` | **Yes** | — | Random hex string for signing JWTs. **Must be set server refuses to start without it.** |
 | `PANEL_PORT` | No | `3001` | Port the web panel listens on |
 | `ADMIN_EMAIL` | **Yes** | — | Email address for the bootstrap admin account |
 | `ADMIN_TEMP_PASS` | **Yes** | — | Temporary password set on first start. Change it immediately after login. |
 | `HOST_IP` | **Yes** | — | IP or hostname used in verification/reset email links |
 | `WORLDS_DIR` | No | `/worlds` | World data path *inside* the panel container |
-| `HOST_WORLDS_DIR` | **Yes** | — | World data path on the *host* — Docker bind mounts this into each world container |
+| `HOST_WORLDS_DIR` | **Yes** | — | World data path on the *host* Docker bind mounts this into each world container |
 | `TMOD_IMAGE` | No | `jacobsmile/tmodloader1.4:latest` | tModLoader Docker image |
 | `PORT_BASE` | No | `7777` | First game port in the allocation range |
 | `PORT_MAX` | No | `7900` | Last game port in the allocation range |
@@ -231,13 +231,13 @@ docker exec -it terraria-hub sh
 
 ---
 
-## playit.gg — Public Tunnels Without Port Forwarding
+## playit.gg Public Tunnels Without Port Forwarding
 
-[playit.gg](https://playit.gg) is a free tunnelling service that gives your Terraria server a public address without touching your router, opening firewall ports, or having a static IP. Terraria Hub supports playit.gg at two levels — a global tunnel for the whole installation, and optional per world tunnels so each user can have their own independent public address.
+[playit.gg](https://playit.gg) is a free tunnelling service that gives your Terraria server a public address without touching your router, opening firewall ports, or having a static IP. Terraria Hub supports playit.gg at two levels a global tunnel for the whole installation, and optional per world tunnels so each user can have their own independent public address.
 
 ### How it works
 
-When a world container starts, Terraria Hub can launch a companion playit.gg agent container alongside it. The agent connects outbound to playit.gg's network and receives a stable public hostname and port. Anyone on the internet can connect to that address and reach the Terraria server — no inbound firewall rules, no NAT, no port forwarding required.
+When a world container starts, Terraria Hub can launch a companion playit.gg agent container alongside it. The agent connects outbound to playit.gg's network and receives a stable public hostname and port. Anyone on the internet can connect to that address and reach the Terraria server no inbound firewall rules, no NAT, no port forwarding required.
 
 ```
 Player → playit.gg network → your playit agent → Terraria container
@@ -261,7 +261,7 @@ The installer asks for a playit.gg secret key during setup. If provided, it adds
 
 ### Per world tunnels (recommended for multi user)
 
-Each world has a **playit.gg Secret Key** field in its Settings tab. When a secret key is saved and the world is started, Terraria Hub launches a dedicated playit agent container just for that world. Each user can have their own tunnel with their own public address — completely independent of every other world on the server.
+Each world has a **playit.gg Secret Key** field in its Settings tab. When a secret key is saved and the world is started, Terraria Hub launches a dedicated playit agent container just for that world. Each user can have their own tunnel with their own public address completely independent of every other world on the server.
 
 This means:
 - User A's world gets one public address
@@ -272,15 +272,15 @@ This means:
 
 playit.gg integration makes Terraria Hub ideal for **streamers and content creators** who want to play Terraria with their viewers or community.
 
-**The problem it solves:** Normally to host a Terraria server that viewers can join, you need to open ports on your home router, expose your real IP address, or pay for a VPS. None of those are ideal — port forwarding is complex, sharing your home IP is a security risk, and a VPS adds ongoing cost.
+**The problem it solves:** Normally to host a Terraria server that viewers can join, you need to open ports on your home router, expose your real IP address, or pay for a VPS. None of those are ideal port forwarding is complex, sharing your home IP is a security risk, and a VPS adds ongoing cost.
 
 **With Terraria Hub + playit.gg:**
 - Spin up a world on any Linux machine you already have (a home server, a spare PC, a VM)
 - Enter your playit.gg key in the world settings
-- Start the world — playit.gg gives you a clean public address like `na1.playit.gg:40123`
+- Start the world playit.gg gives you a clean public address like `na1.playit.gg:40123`
 - Share that address in your stream chat
 - Viewers connect directly without you ever exposing your IP or touching your router
-- When the stream ends, stop the world — the tunnel goes down automatically
+- When the stream ends, stop the world the tunnel goes down automatically
 - Your world data is saved and ready for next stream
 
 **For communities and friend groups:**
@@ -312,12 +312,12 @@ bash ~/docker/terraria-hub/uninstall.sh
 ```
 
 Three removal modes:
-1. **Everything** — containers, images, all world data, install directory
-2. **Containers & images only** — keeps world saves, database, and `.env` (safe for reinstall)
-3. **Containers only** — leaves everything intact; restart with `docker compose up -d --build`
+1. **Everything** containers, images, all world data, install directory
+2. **Containers & images only** keeps world saves, database, and `.env` (safe for reinstall)
+3. **Containers only** leaves everything intact; restart with `docker compose up -d --build`
 
 ---
 
 ## License
 
-MIT — see [LICENSE](LICENSE)
+MIT see [LICENSE](LICENSE)
